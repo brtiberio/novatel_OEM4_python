@@ -1,0 +1,3 @@
+# requirements file for gps.py module
+pyserial >= 3.0.1
+crcmod
