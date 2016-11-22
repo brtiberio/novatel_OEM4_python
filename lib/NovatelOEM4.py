@@ -66,7 +66,6 @@ import logging
 import os
 import serial
 import struct
-import sys
 import threading
 from time import sleep
 
@@ -109,7 +108,7 @@ class Gps:
         self.baudRate = 9600  # current communication baudRate*/
         self.openError = 0  # if any error during any process occurs this will be set */
         self.logFile = ""
-        self.dataFile = ""
+        self.dataQueue = None
         self.name = sensorName
         self.isSet = False
         self.exitFlag = threading.Event()
@@ -155,13 +154,20 @@ class Gps:
         '''
         A thread  to parse responses from device
         '''
+        # used definitions for keys
+        bestxyz_keys = ('pSolStatus', 'posType', 'position', 'positionStd',
+                        'velSolStatus', 'velType', 'velocity', 'velocityStd',
+                        'stnID', 'vLatency', 'diffAge', 'solAge', 'numStasVs',
+                        'numSolSatVs', 'numGGL1', 'reserved', 'extSolStat',
+                        'reserved2', 'sigMask', 'crc32')
+
         self.log.info("Entering Thread logger")
         if(not self.isOpen):
             self.log.warning('Port is not open: {0}'.format(self.myPort))
             self.log.info("Exiting Thread logger")
             return
         MYPORT = self.myPort
-        dataFile = self.dataFile
+        # dataFile = self.dataFile
         while(self.exitFlag.isSet() == False):
             header = [0] * 14
             newByte = ord(MYPORT.read(1))
@@ -269,11 +275,6 @@ class Gps:
                             self.orders.put({'order': 'SBASCONTROL', 'data': message})
                         elif header['messageID'] == self.MessageID['BESTXYZ']:
                             message = [0] * 20
-                            message_keys = ('pSolStatus', 'posType', 'position', 'positionStd',
-                                            'velSolStatus', 'velType', 'velocity', 'velocityStd',
-                                            'stnID', 'vLatency', 'diffAge', 'solAge', 'numStasVs',
-                                            'numSolSatVs', 'numGGL1', 'reserved', 'extSolStat',
-                                            'reserved2', 'sigMask', 'crc32')
                             serialBuffer = MYPORT.read(self.current_header['messageLength'])
                             message[0:2] = struct.unpack('<II', serialBuffer[0:8])
                             message[2] = [0, 0, 0]
@@ -293,34 +294,37 @@ class Gps:
                             message[16:19] = struct.unpack('<3B', serialBuffer[109:112])
                             serialBuffer = MYPORT.read(4)  # crc32
                             message[19] = struct.unpack('<I', serialBuffer)
-                            message = dict(zip(message_keys, message))
+                            message = dict(zip(bestxyz_keys, message))
                             # "Indice,Time,PSolStatus,X,Y,Z,stdX,stdY,stdZ,VSolStatus,VX,VY,VZ,stdVX,stdVY,stdVZ,VLatency,SolAge,SolSatNumber\n"
                             currentTime = datetime.now()
                             myTime = '{0:%Y-%m-%d %H:%M:%S}'.format(currentTime) + '.{0:02.0f}'.format(round(currentTime.microsecond / 10000.0))
-                            dataFile.write('{0:5d},{1},{2},{3},{4},{5},'
-                                           '{6},{7},{8},{9},{10},{11},'
-                                           '{12},{13},{14},{15},{16},'
-                                           '{17},{18}\n'.format(self.Indice, myTime,
-                                                                message['pSolStatus'],
-                                                                message['position'][0],
-                                                                message['position'][1],
-                                                                message['position'][2],
-                                                                message['positionStd'][0],
-                                                                message['positionStd'][1],
-                                                                message['positionStd'][2],
-                                                                message['velSolStatus'],
-                                                                message['velocity'][0],
-                                                                message['velocity'][1],
-                                                                message['velocity'][2],
-                                                                message['velocityStd'][0],
-                                                                message['velocityStd'][1],
-                                                                message['velocityStd'][2],
-                                                                message['vLatency'],
-                                                                message['solAge'],
-                                                                message['numSolSatVs']
-                                                                ))
+                            outMessage = dict(Indice=self.Indice, Time=myTime)
+                            outMessage.update(message)
+                            self.dataQueue.put_nowait(outMessage)
+#                             dataFile.write('{0:5d},{1},{2},{3},{4},{5},'
+#                                            '{6},{7},{8},{9},{10},{11},'
+#                                            '{12},{13},{14},{15},{16},'
+#                                            '{17},{18}\n'.format(self.Indice, myTime,
+#                                                                 message['pSolStatus'],
+#                                                                 message['position'][0],
+#                                                                 message['position'][1],
+#                                                                 message['position'][2],
+#                                                                 message['positionStd'][0],
+#                                                                 message['positionStd'][1],
+#                                                                 message['positionStd'][2],
+#                                                                 message['velSolStatus'],
+#                                                                 message['velocity'][0],
+#                                                                 message['velocity'][1],
+#                                                                 message['velocity'][2],
+#                                                                 message['velocityStd'][0],
+#                                                                 message['velocityStd'][1],
+#                                                                 message['velocityStd'][2],
+#                                                                 message['vLatency'],
+#                                                                 message['solAge'],
+#                                                                 message['numSolSatVs']
+#                                                                 ))
                             self.Indice = self.Indice + 1
-                            dataFile.flush()
+#                            dataFile.flush()
                         else:
                             # .. todo:: error processing.
                             pass
@@ -329,9 +333,9 @@ class Gps:
         self.log.info("Exiting Thread logger")
         return
 
-    def begin(self, comPort="/dev/ttyUSB0",
+    def begin(self, dataQueue,
+              comPort="/dev/ttyUSB0",
               logFile="output.log",
-              dataFile="out.csv",
               baudRate=9600,
               logLevel=20):
         ''' Initializes the gps receiver.
@@ -344,7 +348,7 @@ class Gps:
         Args:
             comPort: system port where receiver is connected.
             logFile: output log for the typical messages from the class.
-            dataFile: data log file used to store incoming requested log commands.
+            dataQueue: a Queue object to store incomming log requests.
             baudRate: baudrate to configure port. (should always be equal to
                 factory default of receiver).
             logLevel: level at which class message should be printed to logFile.
@@ -356,7 +360,7 @@ class Gps:
           .. code-block:: python
 
               Gps.begin(comPort="<port>",
-                  dataFile="<your datafile>",
+                  dataQueue=<your Queue obj>,
                   logFile="<your logfile>",
                   baudRate=9600,
                   logLevel=<logging level int>)
@@ -364,7 +368,6 @@ class Gps:
         **Default values**
 
         :comPort:  "/dev/ttyUSB0"
-        :dataFile:  "./data/out.csv"
         :logFile:  "output.log"
         :baudRate:  9600
         :logLevel:  20
@@ -427,10 +430,10 @@ class Gps:
             self.baudRate = baudRate
             self.isOpen = True
             # open dataFile to save GPS data
-            self.dataFile = open(dataFile, 'w')
+            self.dataQueue = dataQueue
             # write header of csv dataFile
-            self.dataFile.write("Indice,Time,PSolStatus,X,Y,Z,stdX,stdY,stdZ,VSolStatus,VX,VY,VZ,stdVX,stdVY,stdVZ,VLatency,SolAge,SolSatNumber\n")
-            self.dataFile.flush()
+            # self.dataFile.write("Indice,Time,PSolStatus,X,Y,Z,stdX,stdY,stdZ,VSolStatus,VX,VY,VZ,stdVX,stdVY,stdVZ,VLatency,SolAge,SolSatNumber\n")
+            # self.dataFile.flush()
             # start thread to handle GPS responces
             self.threadID = threading.Thread(name="Logger", target=self.parseResponces)
             self.threadID.start()
@@ -1244,7 +1247,7 @@ class Gps:
         self.myPort.close()
         self.isOpen = False
         self.log.info("Shuting down")
-        self.dataFile.close()
+        # self.dataFile.close()
         logging.shutdown()
         return True
 
@@ -1261,27 +1264,98 @@ def main():
     - shutdown: safely disconnects from gps receiver
 
     '''
-    gps = Gps()
-    # check if arguments with port are passed
-    num_args = len(sys.argv)
-    if num_args > 1:
-        # print("argument = {0}".format(sys.argv[1]))
-        if(gps.begin(comPort=sys.argv[1]) != 1):
-            print("Not able to begin device properly... check logfile")
-            return
-    else:
-        if (gps.begin() != 1):
-            print("Not able to begin device properly... check logfile")
-            return
+    import optparse
+
+    def printData(dataQueue, exitFlag):
+        ''' prints data to console
+
+        Thread used to print data from request log (bestxyz) to the console.
+
+        Args:
+            dataQueue: queue class object where data is stored
+            exitFlag: a flag to control the exit of program gracefully
+
+        '''
+        print("Indice,Time,PSolStatus,X,Y,Z,stdX,stdY,stdZ,VSolStatus,VX,VY,VZ,stdVX,stdVY,stdVZ,VLatency,SolAge,SolSatNumber\n")
+        while(exitFlag.isSet() == False):
+            if(dataQueue.empty() == False):
+                newData = dataQueue.get()
+                print('{0:5d},{1},{2},{3},{4},{5},'
+                      '{6},{7},{8},{9},{10},{11},'
+                      '{12},{13},{14},{15},{16},'
+                      '{17},{18}\n'.format(newData['Indice'],
+                                           newData['Time'],
+                                           newData['pSolStatus'],
+                                           newData['position'][0],
+                                           newData['position'][1],
+                                           newData['position'][2],
+                                           newData['positionStd'][0],
+                                           newData['positionStd'][1],
+                                           newData['positionStd'][2],
+                                           newData['velSolStatus'],
+                                           newData['velocity'][0],
+                                           newData['velocity'][1],
+                                           newData['velocity'][2],
+                                           newData['velocityStd'][0],
+                                           newData['velocityStd'][1],
+                                           newData['velocityStd'][2],
+                                           newData['vLatency'],
+                                           newData['solAge'],
+                                           newData['numSolSatVs']
+                                           ))
+            else:
+                sleep(0.1)
+        return
+    ############################################################################
+    #
+    # Start of main part
+    #
+    ############################################################################
+    parser = optparse.OptionParser(usage="usage: %prog [options] args")
+    parser.add_option("-p", "--port", action="store", type="string",
+                      dest="port", default="/dev/ttyUSB0")
+    parser.add_option("-n", "--name", action="store", type="string",
+                      dest="name", default="GPS1")
+    (opts, args) = parser.parse_args()
+    if len(args) > 2:
+        parser.error("incorrect number of arguments")
+        return
+
+    # event flag to exit
+    exitFlag = threading.Event()
+    # create a queue to receive comands
+    dataFIFO = Queue.Queue()
+    # create a thread to parse responses
+    thread1 = threading.Thread(name="printData", target=printData,
+                               args=(dataFIFO, exitFlag))
+    thread1.start()
+    # instanciate a class object
+    gps = Gps(opts.name)
+    # begin
+    if(gps.begin(dataFIFO, comPort=opts.port) != 1):
+        print("Not able to begin device properly... check logfile")
+        return
+
+    # send unlogall
     if(gps.sendUnlogall() != 1):
         print("Unlogall command failed... check logfile")
         gps.myPort.close()
         return
+    # reconfigure port
     gps.setCom(baud=115200)
+    # ask for bestxyz log
     gps.askLog(trigger=2, period=0.1)
+    # wait 10 seconds
     sleep(10)
+    # stop logs and shutdown gps
     gps.shutdown()
+    # stop print thread
+    exitFlag.set()
+    thread1.join()
+    # exit
+    print('Exiting now')
     return
+
 
 if __name__ == '__main__':
     main()
