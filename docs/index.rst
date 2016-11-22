@@ -6,14 +6,15 @@
 Welcome to NovatleOEM4 GPS Library's documentation!
 ===================================================
 
-:Date: 03 Oct 2016
+:Date: 22 Nov 2016
 
-:Version: 0.1
+:Version: 0.2
 
 :Author: Bruno Tibério
 
 :Contact: bruno.tiberio@tecnico.ulisboa.pt
 
+.. include:: changelog.rst
 
 This module contains a few functions to interact with Novatel OEM4 GPS devices.
 Currently only the most important functions and definitions are configured, but

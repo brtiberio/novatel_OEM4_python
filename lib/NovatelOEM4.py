@@ -23,9 +23,9 @@
 
 """ Module NovatelOEM4
 
-:Date: 03 Oct 2016
+:Date: 22 Nov 2016
 
-:Version: 0.1
+:Version: 0.2
 
 :Author: Bruno Tibério
 
@@ -53,8 +53,6 @@ Example:
 
     $python NovatelOEM4.py
 
-
-.. autosummary::
 
 """
 
@@ -295,36 +293,13 @@ class Gps:
                             serialBuffer = MYPORT.read(4)  # crc32
                             message[19] = struct.unpack('<I', serialBuffer)
                             message = dict(zip(bestxyz_keys, message))
-                            # "Indice,Time,PSolStatus,X,Y,Z,stdX,stdY,stdZ,VSolStatus,VX,VY,VZ,stdVX,stdVY,stdVZ,VLatency,SolAge,SolSatNumber\n"
                             currentTime = datetime.now()
                             myTime = '{0:%Y-%m-%d %H:%M:%S}'.format(currentTime) + '.{0:02.0f}'.format(round(currentTime.microsecond / 10000.0))
                             outMessage = dict(Indice=self.Indice, Time=myTime)
                             outMessage.update(message)
                             self.dataQueue.put_nowait(outMessage)
-#                             dataFile.write('{0:5d},{1},{2},{3},{4},{5},'
-#                                            '{6},{7},{8},{9},{10},{11},'
-#                                            '{12},{13},{14},{15},{16},'
-#                                            '{17},{18}\n'.format(self.Indice, myTime,
-#                                                                 message['pSolStatus'],
-#                                                                 message['position'][0],
-#                                                                 message['position'][1],
-#                                                                 message['position'][2],
-#                                                                 message['positionStd'][0],
-#                                                                 message['positionStd'][1],
-#                                                                 message['positionStd'][2],
-#                                                                 message['velSolStatus'],
-#                                                                 message['velocity'][0],
-#                                                                 message['velocity'][1],
-#                                                                 message['velocity'][2],
-#                                                                 message['velocityStd'][0],
-#                                                                 message['velocityStd'][1],
-#                                                                 message['velocityStd'][2],
-#                                                                 message['vLatency'],
-#                                                                 message['solAge'],
-#                                                                 message['numSolSatVs']
-#                                                                 ))
+
                             self.Indice = self.Indice + 1
-#                            dataFile.flush()
                         else:
                             # .. todo:: error processing.
                             pass
@@ -348,7 +323,7 @@ class Gps:
         Args:
             comPort: system port where receiver is connected.
             logFile: output log for the typical messages from the class.
-            dataQueue: a Queue object to store incomming log requests.
+            dataQueue: a Queue object to store incoming bestxyz messages.
             baudRate: baudrate to configure port. (should always be equal to
                 factory default of receiver).
             logLevel: level at which class message should be printed to logFile.
@@ -431,9 +406,6 @@ class Gps:
             self.isOpen = True
             # open dataFile to save GPS data
             self.dataQueue = dataQueue
-            # write header of csv dataFile
-            # self.dataFile.write("Indice,Time,PSolStatus,X,Y,Z,stdX,stdY,stdZ,VSolStatus,VX,VY,VZ,stdVX,stdVY,stdVZ,VLatency,SolAge,SolSatNumber\n")
-            # self.dataFile.flush()
             # start thread to handle GPS responces
             self.threadID = threading.Thread(name="Logger", target=self.parseResponces)
             self.threadID.start()
@@ -1256,6 +1228,7 @@ def main():
     '''Set of test to run to see if class behaves as expected.
 
     Creates a Gps class object and execute the following commands on gps receiver:
+    
     - begin: on default port or given port by argv[1].
     - sendUnlogall
     - setCom(baud=115200): changes baudrate to 115200bps
