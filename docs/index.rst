@@ -6,9 +6,9 @@
 Welcome to NovatleOEM4 GPS Library's documentation!
 ===================================================
 
-:Date: 22 Nov 2016
+:Date: 28 Dec 2016
 
-:Version: 0.2
+:Version: 0.3
 
 :Author: Bruno Tibério
 

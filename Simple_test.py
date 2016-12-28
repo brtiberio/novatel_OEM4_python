@@ -2,6 +2,7 @@ import signal
 import Queue
 import threading
 import optparse
+import logging
 from time import sleep
 import lib.NovatelOEM4 as Novatel
 
@@ -57,12 +58,19 @@ def main():
     parser = optparse.OptionParser(usage="usage: %prog [options] arg1")
     parser.add_option("-f", "--file", action="store", type="string",
                       dest="filename", default="./output.csv")
+    parser.add_option("--log", action="store", type="string",
+                      dest="log", default="output.log")
+    parser.add_option("--log-level", action="store", type="int",
+                      dest="logLevel", default=20)
 
     (opts, args) = parser.parse_args()
-    if len(args) > 1:
+    if len(args) > 3:
         parser.error("incorrect number of arguments")
         return
-
+    logging.basicConfig(filename=opts.log,
+                        level=opts.logLevel,
+                        format='[%(asctime)s] [%(threadName)-10s] %(levelname)-8s %(message)s',
+                        filemode="w")
     dataFile = opts.filename
     # create a queue for data input
     dataQueue = Queue.Queue()
@@ -90,6 +98,7 @@ def main():
     threadID.join()
     myFile.flush()
     myFile.close()
+    logging.shutdown()
     print('Exiting now')
     return
 
