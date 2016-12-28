@@ -23,9 +23,9 @@
 
 """ Module NovatelOEM4
 
-:Date: 22 Nov 2016
+:Date: 28 Dec 2016
 
-:Version: 0.2
+:Version: 0.3
 
 :Author: Bruno Tibério
 
@@ -105,7 +105,6 @@ class Gps:
         self.isOpen = 0  # is port open?*/
         self.baudRate = 9600  # current communication baudRate*/
         self.openError = 0  # if any error during any process occurs this will be set */
-        self.logFile = ""
         self.dataQueue = None
         self.name = sensorName
         self.isSet = False
@@ -310,23 +309,18 @@ class Gps:
 
     def begin(self, dataQueue,
               comPort="/dev/ttyUSB0",
-              logFile="output.log",
-              baudRate=9600,
-              logLevel=20):
+              baudRate=9600):
         ''' Initializes the gps receiver.
 
         This function resets the current port to factory default and setup the
-        gps receiver to be able to acept new commands. Also creates the
-        necessary log files used to save data transmited. If connection to gps
+        gps receiver to be able to acept new commands. If connection to gps
         is made, it launchs a thread used to parse messages comming from gps.
 
         Args:
             comPort: system port where receiver is connected.
-            logFile: output log for the typical messages from the class.
             dataQueue: a Queue object to store incoming bestxyz messages.
             baudRate: baudrate to configure port. (should always be equal to
                 factory default of receiver).
-            logLevel: level at which class message should be printed to logFile.
 
         Returns:
             True or False if the setup has gone as expected or not.
@@ -336,36 +330,17 @@ class Gps:
 
               Gps.begin(comPort="<port>",
                   dataQueue=<your Queue obj>,
-                  logFile="<your logfile>",
-                  baudRate=9600,
-                  logLevel=<logging level int>)
+                  baudRate=9600)
 
         **Default values**
 
         :comPort:  "/dev/ttyUSB0"
-        :logFile:  "output.log"
         :baudRate:  9600
-        :logLevel:  20
 
-        The loglevel is the same as defined in python module ``logging``.
-
-        +---------+---------------+
-        |Level    | Numeric value |
-        +=========+===============+
-        |CRITICAL | 50            |
-        +---------+---------------+
-        |ERROR    | 40            |
-        +---------+---------------+
-        |WARNING  | 30            |
-        +---------+---------------+
-        |INFO     | 20            |
-        +---------+---------------+
-        |DEBUG    | 10            |
-        +---------+---------------+
-        |NOTSET   | 0             |
-        +---------+---------------+
-
-        check documentation of `module logging`_ for more info
+        .. warning::
+            This class uses module ``logging`` wich must be configured in your
+            main program using the ``basicConfig`` method. Check documentation
+            of `module logging`_ for more info.
 
         **HW info:**
 
@@ -375,13 +350,6 @@ class Gps:
         .. _module logging: https://docs.python.org/2/library/logging.html
 
         '''
-
-        # create a logfile
-        self.logFile = logFile
-        logging.basicConfig(filename=logFile,
-                            level=logLevel,
-                            format='[%(asctime)s] [%(threadName)-10s] %(levelname)-8s %(message)s',
-                            filemode="w")
 
         self.log = logging.getLogger(self.name)
 
@@ -1203,8 +1171,7 @@ class Gps:
         * unlogall
         * reset port settings
         * close port
-        * close logfiles
-
+        
         '''
         self.sendUnlogall()
         self.exitFlag.set()
@@ -1219,8 +1186,6 @@ class Gps:
         self.myPort.close()
         self.isOpen = False
         self.log.info("Shuting down")
-        # self.dataFile.close()
-        logging.shutdown()
         return True
 
 
@@ -1228,7 +1193,7 @@ def main():
     '''Set of test to run to see if class behaves as expected.
 
     Creates a Gps class object and execute the following commands on gps receiver:
-    
+
     - begin: on default port or given port by argv[1].
     - sendUnlogall
     - setCom(baud=115200): changes baudrate to 115200bps
@@ -1289,11 +1254,19 @@ def main():
                       dest="port", default="/dev/ttyUSB0")
     parser.add_option("-n", "--name", action="store", type="string",
                       dest="name", default="GPS1")
+    parser.add_option("--log", action="store", type="string",
+                      dest="log", default="output.log")
+    parser.add_option("--log-level", action="store", type="int",
+                      dest="logLevel", default=20)
     (opts, args) = parser.parse_args()
-    if len(args) > 2:
+    if len(args) > 4:
         parser.error("incorrect number of arguments")
         return
 
+    logging.basicConfig(filename=opts.log,
+                        level=opts.logLevel,
+                        format='[%(asctime)s] [%(threadName)-10s] %(levelname)-8s %(message)s',
+                        filemode="w")
     # event flag to exit
     exitFlag = threading.Event()
     # create a queue to receive comands
@@ -1325,6 +1298,7 @@ def main():
     # stop print thread
     exitFlag.set()
     thread1.join()
+    logging.shutdown()
     # exit
     print('Exiting now')
     return
