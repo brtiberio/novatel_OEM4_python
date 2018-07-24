@@ -3,12 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to NovatleOEM4 GPS Library's documentation!
+Welcome to NovatelOEM4 GPS Library's documentation!
 ===================================================
 
-:Date: 28 Dec 2016
+:Date: 24 Jul 2018
 
-:Version: 0.3
+:Version: 0.4
 
 :Author: Bruno Tibério
 

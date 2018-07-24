@@ -1,7 +1,7 @@
 Gps Class
 =========
 
-.. autoclass:: lib.NovatelOEM4.Gps
+.. autoclass:: NovatelOEM4.Gps
 
 
 Methods
@@ -9,53 +9,53 @@ Methods
 
 askLog
 ^^^^^^
-.. automethod:: lib.NovatelOEM4.Gps.askLog
+.. automethod:: NovatelOEM4.Gps.askLog
 
 begin
 ^^^^^
-.. automethod:: lib.NovatelOEM4.Gps.begin
+.. automethod:: NovatelOEM4.Gps.begin
 
 create_header
 ^^^^^^^^^^^^^
-.. automethod:: lib.NovatelOEM4.Gps.create_header
+.. automethod:: NovatelOEM4.Gps.create_header
 
 getDebugMessage
 ^^^^^^^^^^^^^^^
-.. automethod:: lib.NovatelOEM4.Gps.getDebugMessage
+.. automethod:: NovatelOEM4.Gps.getDebugMessage
 
 parseResponces
 ^^^^^^^^^^^^^^
-.. automethod:: lib.NovatelOEM4.Gps.parseResponces
+.. automethod:: NovatelOEM4.Gps.parseResponces
 
 reset
 ^^^^^
-.. automethod:: lib.NovatelOEM4.Gps.reset
+.. automethod:: NovatelOEM4.Gps.reset
 
 saveconfig
 ^^^^^^^^^^
-.. automethod:: lib.NovatelOEM4.Gps.saveconfig
+.. automethod:: NovatelOEM4.Gps.saveconfig
 
 sbascontrol
 ^^^^^^^^^^^
-.. automethod:: lib.NovatelOEM4.Gps.sbascontrol
+.. automethod:: NovatelOEM4.Gps.sbascontrol
 
 sendUnlogall
 ^^^^^^^^^^^^
-.. automethod:: lib.NovatelOEM4.Gps.sendUnlogall
+.. automethod:: NovatelOEM4.Gps.sendUnlogall
 
 setCom
 ^^^^^^
-.. automethod:: lib.NovatelOEM4.Gps.setCom
+.. automethod:: NovatelOEM4.Gps.setCom
 
 setDynamics
 ^^^^^^^^^^^
-.. automethod:: lib.NovatelOEM4.Gps.setDynamics
+.. automethod:: NovatelOEM4.Gps.setDynamics
 
 shutdown
 ^^^^^^^^
-.. automethod:: lib.NovatelOEM4.Gps.shutdown
+.. automethod:: NovatelOEM4.Gps.shutdown
 
 CRC32Value
 ^^^^^^^^^^
-.. automethod:: lib.NovatelOEM4.Gps.CRC32Value
+.. automethod:: NovatelOEM4.Gps.CRC32Value
 

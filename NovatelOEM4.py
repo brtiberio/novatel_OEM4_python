@@ -23,9 +23,9 @@
 
 """ Module NovatelOEM4
 
-:Date: 28 Dec 2016
+:Date: 24 Jul 2018
 
-:Version: 0.3
+:Version: 0.4
 
 :Author: Bruno Tibério
 
@@ -36,7 +36,7 @@ This module contains a few functions to interact with Novatel OEM4 GPS devices.
 Currently only the most important functions and definitions are configured, but
 the intention is to make it as much complete as possible.
 
-A simple example can be run by executing the main function wich creates a Gps
+A simple example can be run by executing the main function which creates a Gps
 class object and execute the following commands on gps receiver:
 
 - **begin:** on default port or given port by argv[1].
@@ -56,7 +56,6 @@ Example:
 
 """
 
-import Queue
 import binascii
 import crcmod
 from datetime import datetime
@@ -66,6 +65,10 @@ import serial
 import struct
 import threading
 from time import sleep
+try:
+    import queue
+except ImportError:
+    import Queue as queue
 
 
 class Gps:
@@ -109,12 +112,12 @@ class Gps:
         self.name = sensorName
         self.isSet = False
         self.exitFlag = threading.Event()
-        self.orders = Queue.Queue()
+        self.orders = queue.Queue()
         self.current_header = []
         self.Indice = 1
 
     def CRC32Value(self, i):
-        '''Calculate the 32bits CRC of message.
+        """Calculate the 32bits CRC of message.
 
         See OEMStar Firmware Reference Manual Rev 6 page 24 for
         more information.
@@ -125,12 +128,12 @@ class Gps:
         Returns:
             The CRC value calculated over the input message.
 
-        '''
+        """
         crc = crcmod.mkCrcFun(0x104C11DB7, 0, True, 0)
         return crc(i)
 
     def getDebugMessage(self, message):
-        '''Create a string which contains all bytes represented as hex values
+        """Create a string which contains all bytes represented as hex values
 
         Auxiliary function for helping with debug. Receives a binary message as
         input and convert it as a string with the hexdecimal representation.
@@ -141,16 +144,16 @@ class Gps:
         Returns:
             A string of corresponding hex representation of message.
 
-        '''
+        """
         debugMessage = (binascii.hexlify(message)).upper()
         debugMessage = [debugMessage[i:i + 2] for i in range(0, len(debugMessage), 2)]
         debugMessage = ' '.join('0x{}'.format(item) for item in debugMessage)
         return debugMessage
 
     def parseResponces(self):
-        '''
+        """
         A thread  to parse responses from device
-        '''
+        """
         # used definitions for keys
         bestxyz_keys = ('pSolStatus', 'posType', 'position', 'positionStd',
                         'velSolStatus', 'velType', 'velocity', 'velocityStd',
@@ -310,7 +313,7 @@ class Gps:
     def begin(self, dataQueue,
               comPort="/dev/ttyUSB0",
               baudRate=9600):
-        ''' Initializes the gps receiver.
+        """ Initializes the gps receiver.
 
         This function resets the current port to factory default and setup the
         gps receiver to be able to acept new commands. If connection to gps
@@ -349,7 +352,7 @@ class Gps:
 
         .. _module logging: https://docs.python.org/2/library/logging.html
 
-        '''
+        """
 
         self.log = logging.getLogger(self.name)
 
@@ -382,7 +385,7 @@ class Gps:
             return True
 
     def create_header(self, messageID, messageLength, portAddress=192):
-        '''Creates a header object to be passed to receiver.
+        """Creates a header object to be passed to receiver.
 
         Args:
             messageID: the corresponding value of identifying the message body.
@@ -446,7 +449,7 @@ class Gps:
 
         .. note::  portAddress=192 (equal to thisport)
 
-        '''
+        """
         header = [0] * 16
         # First 3 start bytes are always.
         header[0] = 0xAA
@@ -465,7 +468,7 @@ class Gps:
         return header
 
     def sendUnlogall(self, port=8, held=1):
-        '''Send command unlogall to gps device.
+        """Send command unlogall to gps device.
 
         On sucess clears all logs on all ports even held logs.
 
@@ -489,7 +492,7 @@ class Gps:
 
         .. note:: See: OEMStar Firmware Reference Manual Rev 6 page 161
 
-        '''
+        """
         if self.isOpen:
             MYPORT = self.myPort
 
@@ -524,7 +527,7 @@ class Gps:
 
     def setCom(self, baud, port=6, parity=0, databits=8, stopbits=1,
                handshake=0, echo=0, breakCond=1):
-        '''Set com configuration.
+        """Set com configuration.
 
         Args:
             baud: communication baudrate.
@@ -618,7 +621,7 @@ class Gps:
 
         .. note:: See: OEMStar Firmware Reference Manual Rev 6 page 56
 
-        '''
+        """
         if self.isOpen:
             MYPORT = self.myPort
             messageSize = 32  # 32bytes length
@@ -665,7 +668,7 @@ class Gps:
             return False
 
     def askLog(self, logID='BESTXYZ', port=192, trigger=4, period=0, offset=0, hold=0):
-        '''Request a log from receiver.
+        """Request a log from receiver.
 
         Args:
             logID: log type to request.
@@ -727,7 +730,7 @@ class Gps:
         |       |           | | input                                         |
         +-------+-----------+-------------------------------------------------+
 
-        '''
+        """
         if self.isOpen:
             MYPORT = self.myPort
             messageSize = 32
@@ -757,7 +760,7 @@ class Gps:
             return False
 
     def setDynamics(self, dynamicID):
-        '''Set Dynamics of receiver.
+        """Set Dynamics of receiver.
 
         Args:
             dynamicID: identifier of the type of dynamic.
@@ -816,7 +819,7 @@ class Gps:
               track, may trip the RTK filter to reset and cause the position to
               jump. AIR should be used in this case.
 
-        '''
+        """
         if self.isOpen:
             if dynamicID in [0, 1, 2]:
                 MYPORT = self.myPort
@@ -853,7 +856,7 @@ class Gps:
             return False
 
 #     def setPDPFilter(self, switchID):
-#         ''' set PDPFilter type
+#         """ set PDPFilter type
 #
 #         Args:
 #             switchID: Enable, disable or reset.
@@ -902,7 +905,7 @@ class Gps:
 #             Enable the PDP filter to output the PDP solution in BESTPOS, BESTVEL
 #             and NMEA logs.
 #
-#         '''
+#         """
 #         if self.isOpen:
 #             if switchID in [0, 1, 2]:
 #                 MYPORT = self.myPort
@@ -942,7 +945,7 @@ class Gps:
 #         pass
 
     def reset(self, delay=0):
-        ''' Performs a hardware reset
+        """ Performs a hardware reset
 
         Args:
             delay: seconds to wait before resetting. Default to zero.
@@ -969,7 +972,7 @@ class Gps:
         The optional delay field is used to set the number of seconds the
         receiver is to wait before resetting.
 
-        '''
+        """
         if self.isOpen:
             MYPORT = self.myPort
             messageSize = 4  # Ulong
@@ -1002,7 +1005,7 @@ class Gps:
             return False
 
     def saveconfig(self):
-            ''' Save user current configuration
+            """ Save user current configuration
 
             Returns:
                 A boolean if request was sucessful or not
@@ -1021,7 +1024,7 @@ class Gps:
             memory. The configuration includes the current log settings, FIX
             settings, port configurations, and so on. Its output is in the
             RXCONFIG log.
-            '''
+            """
             if self.isOpen:
                 MYPORT = self.myPort
                 messageSize = 0  # Ulong
@@ -1053,7 +1056,7 @@ class Gps:
                 return False
 
     def sbascontrol(self, keywordID=1, systemID=1, prn=0, testmode=0):
-            ''' Set SBAS test mode and PRN SBAS
+            """ Set SBAS test mode and PRN SBAS
 
             Args:
                 keywordID: True or false. Control the reception of SBAS
@@ -1127,7 +1130,7 @@ class Gps:
             switches to Pseudorange Differential (RTCM or RTCA) or RTK if the
             appropriate corrections are received, regardless of the current
             setting.
-            '''
+            """
             if self.isOpen:
                 MYPORT = self.myPort
                 messageSize = 0  # Ulong
@@ -1161,7 +1164,7 @@ class Gps:
                 return False
 
     def shutdown(self):
-        '''Prepare for exiting program
+        """Prepare for exiting program
 
         Returns:
             always returns true after all tasks are done.
@@ -1172,7 +1175,7 @@ class Gps:
         * reset port settings
         * close port
         
-        '''
+        """
         self.sendUnlogall()
         self.exitFlag.set()
         self.sendUnlogall()
@@ -1190,7 +1193,7 @@ class Gps:
 
 
 def main():
-    '''Set of test to run to see if class behaves as expected.
+    """Set of test to run to see if class behaves as expected.
 
     Creates a Gps class object and execute the following commands on gps receiver:
 
@@ -1201,11 +1204,11 @@ def main():
     - wait for 10 seconds
     - shutdown: safely disconnects from gps receiver
 
-    '''
-    import optparse
+    """
+    import argparse
 
     def printData(dataQueue, exitFlag):
-        ''' prints data to console
+        """ prints data to console
 
         Thread used to print data from request log (bestxyz) to the console.
 
@@ -1213,8 +1216,8 @@ def main():
             dataQueue: queue class object where data is stored
             exitFlag: a flag to control the exit of program gracefully
 
-        '''
-        print("Indice,Time,PSolStatus,X,Y,Z,stdX,stdY,stdZ,VSolStatus,VX,VY,VZ,stdVX,stdVY,stdVZ,VLatency,SolAge,SolSatNumber\n")
+        """
+        print("Index,Time,PSolStatus,X,Y,Z,stdX,stdY,stdZ,VSolStatus,VX,VY,VZ,stdVX,stdVY,stdVZ,VLatency,SolAge,SolSatNumber\n")
         while(exitFlag.isSet() == False):
             if(dataQueue.empty() == False):
                 newData = dataQueue.get()
@@ -1244,47 +1247,68 @@ def main():
             else:
                 sleep(0.1)
         return
-    ############################################################################
-    #
-    # Start of main part
-    #
-    ############################################################################
-    parser = optparse.OptionParser(usage="usage: %prog [options] args")
-    parser.add_option("-p", "--port", action="store", type="string",
-                      dest="port", default="/dev/ttyUSB0")
-    parser.add_option("-n", "--name", action="store", type="string",
-                      dest="name", default="GPS1")
-    parser.add_option("--log", action="store", type="string",
-                      dest="log", default="output.log")
-    parser.add_option("--log-level", action="store", type="int",
-                      dest="logLevel", default=20)
-    (opts, args) = parser.parse_args()
-    if len(args) > 4:
-        parser.error("incorrect number of arguments")
-        return
 
-    logging.basicConfig(filename=opts.log,
-                        level=opts.logLevel,
+    # -------------------------------------------------------------------------
+    # Start of the main program
+    # -------------------------------------------------------------------------
+    # add arguments options
+    parser = argparse.ArgumentParser(add_help=True,
+                                     description='Novatel GPS receiver interface library')
+    parser.add_argument("-p", "--port", action="store", type=str,
+                      dest="port", default="/dev/ttyUSB0", help='serial port used')
+    parser.add_argument("-n", "--name", action="store", type=str,
+                      dest="name", default="GPS1", help='ID of sensor, in case of multiple units')
+    parser.add_argument('--log', action='store', type=str, dest='log', default='output.log',
+                        help='log file to be used')
+    parser.add_argument("--log-level", action="store", type=str,
+                        dest="logLevel", default='info',
+                        help='Log level to be used. See logging module for more info',
+                        choices=['critical', 'error', 'warning', 'info', 'debug'])
+
+    args = parser.parse_args()
+
+    log_Level = {'error': logging.ERROR,
+                 'debug': logging.DEBUG,
+                 'info': logging.INFO,
+                 'warning': logging.WARNING,
+                 'critical': logging.CRITICAL
+                 }
+
+    logging.basicConfig(filename=args.log,
+                        level=log_Level[args.logLevel],
                         format='[%(asctime)s] [%(threadName)-10s] %(levelname)-8s %(message)s',
                         filemode="w")
+
+    # ---------------------------------------------------------------------------
+    # define a Handler which writes INFO messages or higher in console
+    # ---------------------------------------------------------------------------
+    console = logging.StreamHandler()
+    console.setLevel(log_Level[args.logLevel])
+    # set a format which is simpler for console use
+    formatter = logging.Formatter('%(name)-20s: %(levelname)-8s %(message)s')
+    # tell the handler to use this format
+    console.setFormatter(formatter)
+    # add the handler to the root logger
+    logging.getLogger('').addHandler(console)
+    # ---------------------------------------------------------------------------
     # event flag to exit
     exitFlag = threading.Event()
     # create a queue to receive comands
-    dataFIFO = Queue.Queue()
+    dataFIFO = queue.Queue()
     # create a thread to parse responses
     thread1 = threading.Thread(name="printData", target=printData,
                                args=(dataFIFO, exitFlag))
     thread1.start()
     # instanciate a class object
-    gps = Gps(opts.name)
+    gps = Gps(args.name)
     # begin
-    if(gps.begin(dataFIFO, comPort=opts.port) != 1):
-        print("Not able to begin device properly... check logfile")
+    if gps.begin(dataFIFO, comPort=args.port) != 1:
+        logging.info("Not able to begin device properly... check logfile")
         return
 
     # send unlogall
-    if(gps.sendUnlogall() != 1):
-        print("Unlogall command failed... check logfile")
+    if gps.sendUnlogall() != 1:
+        logging.info("Unlogall command failed... check logfile")
         gps.myPort.close()
         return
     # reconfigure port
@@ -1300,7 +1324,7 @@ def main():
     thread1.join()
     logging.shutdown()
     # exit
-    print('Exiting now')
+    logging.info('Exiting now')
     return
 
 
