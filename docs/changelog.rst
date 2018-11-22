@@ -1,9 +1,13 @@
 =========
 Changelog
 =========
+:version 0.4.1:
+   Corrected bugs in reset,  saveconfig and sbascontrol.
+   Corrected messageID access using () instead [] as it is a dictionary. 
+   Added static method decoration in  CRC32Value,  getDebugMessage and createHeader
 :version 0.4:
    Moved from optoparse to argparse module.
-   changed Queue to make it compatible with python3 queue. Backwards compatibility is maintained.
+   Changed Queue to make it compatible with python3 queue. Backwards compatibility is maintained.
    Restructured default location. Moved from Lib folder to base path.
    Moved examples to proper folder. This cause backwards compatibility problems. On import, replace
    ``import Lib.NovatelOEM4`` with simply ``import NovatelOEM4``

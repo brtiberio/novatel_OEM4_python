@@ -23,9 +23,9 @@
 
 """ Module NovatelOEM4
 
-:Date: 24 Jul 2018
+:Date: 22 Nov 2018
 
-:Version: 0.4
+:Version: 0.4.1
 
 :Author: Bruno Tibério
 
@@ -116,7 +116,8 @@ class Gps:
         self.current_header = []
         self.Indice = 1
 
-    def CRC32Value(self, i):
+    @staticmethod
+    def CRC32Value(i):
         """Calculate the 32bits CRC of message.
 
         See OEMStar Firmware Reference Manual Rev 6 page 24 for
@@ -132,7 +133,8 @@ class Gps:
         crc = crcmod.mkCrcFun(0x104C11DB7, 0, True, 0)
         return crc(i)
 
-    def getDebugMessage(self, message):
+    @staticmethod
+    def getDebugMessage(message):
         """Create a string which contains all bytes represented as hex values
 
         Auxiliary function for helping with debug. Receives a binary message as
@@ -976,7 +978,7 @@ class Gps:
         if self.isOpen:
             MYPORT = self.myPort
             messageSize = 4  # Ulong
-            header = self.create_header(messageID=self.MessageID('RESET'),
+            header = self.create_header(messageID=self.MessageID['RESET'],
                                         messageLength=messageSize)
             myMessage = struct.pack('<BBBBHBBHHBBHlLHH', *header)
             myMessage = myMessage + struct.pack('<L', delay)
@@ -1028,7 +1030,7 @@ class Gps:
             if self.isOpen:
                 MYPORT = self.myPort
                 messageSize = 0  # Ulong
-                header = self.create_header(messageID=self.MessageID('RESET'),
+                header = self.create_header(messageID=self.MessageID['SAVECONFIG'],
                                             messageLength=messageSize)
                 myMessage = struct.pack('<BBBBHBBHHBBHlLHH', *header)
                 crc_value = self.CRC32Value(myMessage)
@@ -1134,7 +1136,7 @@ class Gps:
             if self.isOpen:
                 MYPORT = self.myPort
                 messageSize = 0  # Ulong
-                header = self.create_header(messageID=self.MessageID('SBASCONTROL'),
+                header = self.create_header(messageID=self.MessageID['SBASCONTROL'],
                                             messageLength=messageSize)
                 myMessage = struct.pack('<BBBBHBBHHBBHlLHH', *header)
                 myMessage = myMessage + struct.pack('<LLLL', keywordID, systemID,
@@ -1304,6 +1306,8 @@ def main():
     # begin
     if gps.begin(dataFIFO, comPort=args.port) != 1:
         logging.info("Not able to begin device properly... check logfile")
+        exitFlag.set()
+        thread1.join()
         return
 
     # send unlogall
