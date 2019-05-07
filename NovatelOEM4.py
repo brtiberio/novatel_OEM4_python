@@ -114,7 +114,7 @@ class Gps:
         self.exitFlag = threading.Event()
         self.orders = queue.Queue()
         self.current_header = []
-        self.Indice = 1
+        self.Index = 1
 
     @staticmethod
     def CRC32Value(i):
@@ -299,11 +299,11 @@ class Gps:
                             message = dict(zip(bestxyz_keys, message))
                             currentTime = datetime.now()
                             myTime = '{0:%Y-%m-%d %H:%M:%S}'.format(currentTime) + '.{0:02.0f}'.format(round(currentTime.microsecond / 10000.0))
-                            outMessage = dict(Indice=self.Indice, Time=myTime)
+                            outMessage = dict(Index=self.Index, Time=myTime)
                             outMessage.update(message)
                             self.dataQueue.put_nowait(outMessage)
 
-                            self.Indice = self.Indice + 1
+                            self.Index = self.Index + 1
                         else:
                             # .. todo:: error processing.
                             pass
@@ -1226,7 +1226,7 @@ def main():
                 print('{0:5d},{1},{2},{3},{4},{5},'
                       '{6},{7},{8},{9},{10},{11},'
                       '{12},{13},{14},{15},{16},'
-                      '{17},{18}\n'.format(newData['Indice'],
+                      '{17},{18}\n'.format(newData['Index'],
                                            newData['Time'],
                                            newData['pSolStatus'],
                                            newData['position'][0],

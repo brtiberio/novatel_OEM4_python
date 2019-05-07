@@ -6,9 +6,9 @@
 Welcome to NovatelOEM4 GPS Library's documentation!
 ===================================================
 
-:Date: 24 Jul 2018
+:Date: 07 May 2019
 
-:Version: 0.4
+:Version: 0.4.2
 
 :Author: Bruno Tibério
 

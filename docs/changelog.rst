@@ -1,6 +1,8 @@
 =========
 Changelog
 =========
+:version 0.4.2:
+   Changed all Indice variables to Index to be in english
 :version 0.4.1:
    Corrected bugs in reset,  saveconfig and sbascontrol.
    Corrected messageID access using () instead [] as it is a dictionary. 
